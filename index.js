@@ -27,7 +27,10 @@ client.on("message", function(message) {
         timeLog.logout(discordUserId).then(result => message.reply(result));
     } else if (command === "break") {
         timeLog.breaktime(discordUserId).then(result => message.reply(result));
-    } else if (command === "help") {
+    }
+    
+    
+    else if (command === "help") {
         message.reply("**Available Commands**: \n **ATTENDANCE** \n - !in - time in \n - !out - time out \n - !break - break time to resume to work type !in \n")
     }
 });

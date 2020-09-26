@@ -12,7 +12,7 @@ const funcs = {};
 async function login(discordId) {
   let verify = await user.verifyUser(discordId);
   if (verify.length <= 0) {
-    return 'Wait! sino ka? Hindi ka pa belong, Register ka muna ganito -- !register [username sa dovop]';
+    return 'Register ka muna ganito -- !register [username sa dovop]';
   }
   let username = verify[0].username;
   let name = verify[0].name;
@@ -30,7 +30,7 @@ async function login(discordId) {
   let response = pool.query(query).then(function (result) {
     if (result.length > 0) {
       if (result[0].status == 1) {
-        return 'Naka IN kana.';
+        return 'You are already !in.';
       } else if (result[0].status == 2) {
         // update break
         let breakQuery = `SELECT * FROM time_break_logs WHERE ?? = ? AND ?? = ? LIMIT 1`;
@@ -80,7 +80,7 @@ async function login(discordId) {
 async function logout(discordId) {
   let verify = await user.verifyUser(discordId);
   if (verify.length <= 0) {
-    return 'Wait! sino ka? Hindi ka pa belong, Register ka muna ganito -- !register [username sa dovop]';
+    return 'Register ka muna ganito -- !register [username sa dovop]';
   }
   let username = verify[0].username;
   let name = verify[0].name;
@@ -101,10 +101,15 @@ async function logout(discordId) {
       let logId = result[0].id;
       let updateQuery = `UPDATE time_logs SET time_out = '${currentDate}', status = 3 WHERE id = ${logId}`;
       return pool.query(updateQuery).then(function (result) {
-        return 'OUT! now take a rest. :relaxed: ';
+        let currentDate = moment().format('YYYY-MM-DD');
+        let summaryResponse = timeSummaryFormat(username, currentDate + " 00:00:00", currentDate + " 23:59:59")
+          .then(res => {
+            return 'OUT! \n' + res;
+          });
+        return summaryResponse;
       });
     } else {
-      return 'Hindi ka pa nag i-in gusto mo na mag-out! :rofl:';
+      return 'Please !in before going !out';
     }
   });
 
@@ -114,7 +119,7 @@ async function logout(discordId) {
 async function breaktime(discordId) {
   let verify = await user.verifyUser(discordId);
   if (verify.length <= 0) {
-    return 'Wait! sino ka? Hindi ka pa belong, Register ka muna ganito -- !register [username sa dovop]';
+    return 'Register ka muna ganito -- !register [username sa dovop]';
   }
   let username = verify[0].username;
   let name = verify[0].name;
@@ -160,7 +165,7 @@ async function breaktime(discordId) {
 
       return breakQueryResponse;
     } else {
-      return 'Mag In ka muna siguro bago ka mag break :stuck_out_tongue_winking_eye: ';
+      return 'Mag !in ka muna bago ka mag !break';
     }
   });
 
@@ -184,7 +189,6 @@ async function timeSummary(username, startDate, endDate) {
     if(index == arr.length - 1) lastLogout = value['time_out'];
     let query = `SELECT * FROM time_break_logs WHERE generated_key = '${generated_key}'`;
     let breaksResQuery = await pool.query(query);
-    
     let breaksSeconds = breaksResQuery.map((breakVal,breakIndex,breakArr) => {
         let breakIn = moment(breakVal['break_in']);
         let breakOut = moment(breakVal['break_out']);
@@ -193,13 +197,11 @@ async function timeSummary(username, startDate, endDate) {
         return breakDuration.asSeconds();
       }).reduce((prev,curr) => prev+curr,0);
     
-
     const summary = {
       totalHours : seconds,
       breakHours : breaksSeconds,
       totalOfficeHours : seconds - breaksSeconds 
     }
-
     return summary;
   })
 
@@ -232,33 +234,41 @@ async function timeSummary(username, startDate, endDate) {
   let summary = {
     firstLogin : firstLogin,
     lastLogin : lastLogout,
-    totaltime : {
-      days : total.days(),
-      hours : total.hours(),
-      minutes : total.minutes(),
-      seconds : total.seconds()
-    },
-    breaktime : {
-      days : totalBreak.days(),
-      hours : totalBreak.hours(),
-      minutes : totalBreak.minutes(),
-      seconds : totalBreak.seconds()
-    },
-    officetime : {
-      days : totalOffice.days(),
-      hours : totalOffice.hours(),
-      minutes : totalOffice.minutes(),
-      seconds : totalOffice.seconds()
-    },
-
+    totaltime : total._data,
+    breaktime : totalBreak._data,
+    officetime : totalOffice._data,
   }
 
   return summary
 }
 
+async function timeSummaryFormat(...params) {
+  let username = params[0];
+  let sdate = params[1];
+  let edate = params[2];
+  let type = params[3] ? params[3] : "all"; // all, break, office, total
 
+  let val = await timeSummary(username, sdate, edate);
+  if(type === 'break') {
+    return "break duration: " + formatDateToString(val.breaktime); 
+  } else if (type === 'all') {
+    let officeTime = formatDateToString(val.officetime);
+    let totalTime = formatDateToString(val.totaltime);
+    let breakTime = formatDateToString(val.breaktime);
+    let firstLogin = moment(val.firstLogin).format('YYYY-MM-DD hh:mm:ss a');
+    let lastLogin = moment(val.lastLogin).format('YYYY-MM-DD hh:mm:ss a');
+    return `**SUMMARY** \n :calendar: : ${firstLogin} - ${lastLogin} \n :clock1: : ${totalTime} \n :office: : ${officeTime} \n :fork_and_knife: : ${breakTime}`
+  }
+}
 
-timeSummary('vlad@engagia.com', '2020-09-07 00:00:00', '2020-09-08 23:59:59');
+function formatDateToString(value) {
+  let days = value.days > 0 ? value.days + "D": "";
+  let hours = value.hours + "h";
+  let minute = value.minutes + "m";
+  let seconds = value.seconds + "s";
+   
+  return `${days}${hours} ${minute} ${seconds}`
+}
 
 funcs.login = login;
 funcs.logout = logout;
