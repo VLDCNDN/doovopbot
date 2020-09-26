@@ -14,21 +14,25 @@ var bug = require('./models/bug');
 client.on('ready', () => {
   setInterval(function () {
     let time= moment().format("HH:mm");
+    let dayName = moment().format('dddd')
     let mess = "\n\n **CLIENT BUG UPDATES**:\n > :red_circle:-SLA1  :orange_circle:-SLA2  :green_circle:-SLA3  :blue_circle:-SLA4 \n\n";
-    if(time == "07:00") {
-        let toSend = ":city_sunset: GOOD MORNING DEVS " + mess;
-        bug.getClientBugs().then(result=>{
-            client.channels.cache.get('748378871786635374').send(toSend + result);
-    
-        });
-    } else if (time == "16:00") {
-        let toSend = ":city_dusk: GOOD AFTERNOON DEVS " + mess;
-        bug.getClientBugs().then(result=>{
-            client.channels.cache.get('748378871786635374').send(toSend + result);
-    
-        });
+    if(dayName !== "Saturday" && dayName !== "Sunday") {
+        if(time == "07:00") {
+            let toSend = ":city_sunset: GOOD MORNING DEVS " + mess;
+            bug.getClientBugs().then(result=>{
+                client.channels.cache.get('748378871786635374').send(toSend + result);
+        
+            });
+        } else if (time == "16:00") {
+            let toSend = ":city_dusk: GOOD AFTERNOON DEVS " + mess;
+            bug.getClientBugs().then(result=>{
+                client.channels.cache.get('748378871786635374').send(toSend + result);
+        
+            });
+        }
+        
     }
-    },60000);
+  },60000);
 });
 
 client.on('message', function (message) {
@@ -60,15 +64,5 @@ client.on('message', function (message) {
   }
 
 });
-
-// client.on
-// setInterval(function () {
-//   //this code runs every second
-//   client
-//     .on('message', function (message) {
-//       client.channels.cache.get('759361565593174017').send('Hello here!');
-//     })
-//     .setMaxListeners(5);
-// }, 5000);
 
 client.login(config.BOT_TOKEN);
