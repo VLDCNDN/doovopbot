@@ -42,8 +42,8 @@ async function getClientBugs() {
         let toTag = discordTag != null ? "<@" +discordTag +">": firstName
         return `${toTag} - ${sla} \`[${id}][${status}][${clientName}] ${title}\` -- **DUE:** ${deadline} `
     });
-
-    return cbMapped.join('\n');
+    
+    return cbMapped;
 }
 
 funcs.getClientBugs = getClientBugs;
